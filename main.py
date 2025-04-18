@@ -1,69 +1,89 @@
 import asyncio
 import json
-from aiogram import Bot, Dispatcher
-from aiogram.filters import Command
-from aiogram.types import Message
+import logging
+import sys
 
-TOKEN = '7641467002:AAHGWq1AsIC2FRhHrABio4HR5uesZEa7meM'
-ADMIN_ID = 7346730386
+from aiogram import Bot, Dispatcher, html, F
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import (
+    Message, KeyboardButton, ReplyKeyboardMarkup,
+    InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+)
+
+from config import TOKEN
 
 dp = Dispatcher()
 
-# Foydalanuvchini data.json ga saqlash funksiyasi
-def save_user_to_json(user_data: dict, filename: str = "data.json"):
-    try:
-        with open(filename, "r", encoding="utf-8") as file:
-            data = json.load(file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
-        data = []
 
-    data.append(user_data)
-
-    with open(filename, "w", encoding="utf-8") as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
-
-
-@dp.message(Command("start"))
+@dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    user = message.from_user
-    ismi = user.full_name
-    user_id = user.id
-    username = user.username or 'yo‘q'
+    # JSONdan foydalanuvchilarni o‘qish
+    with open("users.json", "r", encoding="utf-8") as file:
+        users = json.load(file)
 
-    user_data = {
-        "ismi": ismi,
-        "user_id": user_id,
-        "username": username
-    }
+    # Oddiy tugmalar (foydalanuvchi ismlari va salom)
+    name_buttons = [KeyboardButton(text=user['name']) for user in users.values()]
+    salom_button = KeyboardButton(text="salom")
 
-    save_user_to_json(user_data)
+    reply_keyboard = ReplyKeyboardMarkup(
+        keyboard=[name_buttons, [salom_button]],
+        resize_keyboard=True,
+        input_field_placeholder="Tugmalardan birini tanlang"
+    )
 
-    print(f"Botga /start yuborgan foydalanuvchi:\n"
-          f"Ism: {ismi}\n"
-          f"Username: @{username}\n"
-          f"ID: {user_id}")
+    # Inline tugma
+    inline_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="qonday", callback_data="qonday")]
+        ]
+    )
+
+    # Ikkala keyboardni yuborish
+    await message.answer(
+        f"Hello, {html.bold(message.from_user.full_name)}!",
+        reply_markup=reply_keyboard
+    )
 
     await message.answer(
-        f"Salom {ismi}!\n"
-        f"Sizning ma'lumotlaringiz:\n"
-        f"Ism: {ismi}\n"
-        f"Username: @{username}\n"
-        f"ID: {user_id}"
+        "Quyidagi tugmani ham bosib ko‘r 👇",
+        reply_markup=inline_kb
     )
 
-    await message.bot.send_message(
-        ADMIN_ID,
-        f"Yangi foydalanuvchi botga start bosdi!\n"
-        f"Ism: {ismi}\n"
-        f"Username: @{username}\n"
-        f"ID: {user_id}"
-    )
+
+@dp.message(F.text.isdigit())
+async def get_user(message: Message):
+    with open("users.json", "r", encoding="utf-8") as file:
+        users = json.load(file)
+
+    if message.text in users:
+        user = users[message.text]
+        answer = f"Ismi : {user['name']}, yoshi : {user['age']}"
+        await message.answer(answer)
+    else:
+        await message.answer(f"{message.text} id li user yo'q")
+
+
+@dp.message()
+async def echo_handler(message: Message) -> None:
+    if "salom" in message.text.lower():
+        await message.answer("Va alaykum assalom")
+    else:
+        await message.answer(message.text)
+
+
+@dp.callback_query(F.data == "qonday")
+async def handle_qonday(callback: CallbackQuery):
+    await callback.message.answer("Buviniki")
+    await callback.answer()  # Callbackga javob berish majburiy
 
 
 async def main() -> None:
-    bot = Bot(token=TOKEN)
+    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
