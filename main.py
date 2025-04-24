@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 
-from aiogram import Bot, Dispatcher, html, F
+from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
@@ -16,73 +16,44 @@ from config import TOKEN
 
 dp = Dispatcher()
 
-
+# /start komandasi uchun handler
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    # JSONdan foydalanuvchilarni o‘qish
-    with open("users.json", "r", encoding="utf-8") as file:
-        users = json.load(file)
-
-    # Oddiy tugmalar (foydalanuvchi ismlari va salom)
-    name_buttons = [KeyboardButton(text=user['name']) for user in users.values()]
-    salom_button = KeyboardButton(text="salom")
-
+    # Oddiy tugma: "🛒 Karzinka"
     reply_keyboard = ReplyKeyboardMarkup(
-        keyboard=[name_buttons, [salom_button]],
+        keyboard=[[KeyboardButton(text="🛒 Karzinka")]],
         resize_keyboard=True,
-        input_field_placeholder="Tugmalardan birini tanlang"
+        input_field_placeholder="Bo'limni tanlang"
     )
 
-    # Inline tugma
-    inline_kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="qonday", callback_data="qonday")]
-        ]
-    )
-
-    # Ikkala keyboardni yuborish
     await message.answer(
-        f"Hello, {html.bold(message.from_user.full_name)}!",
+        f"Assalomu alaykum, {message.from_user.full_name}!",
         reply_markup=reply_keyboard
     )
 
-    await message.answer(
-        "Quyidagi tugmani ham bosib ko‘r 👇",
-        reply_markup=inline_kb
+# "🛒 Karzinka" tugmasi bosilganda inline tugmalarni ko'rsatish
+@dp.message(F.text == "🛒 Karzinka")
+async def show_karzinka_inline(message: Message):
+    inline_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🍎 Olma", callback_data="olma")],
+            [InlineKeyboardButton(text="🍇 Uzum", callback_data="uzum")],
+            [InlineKeyboardButton(text="🍉 Tarvuz", callback_data="tarvuz")],
+        ]
     )
+    await message.answer("Mahsulotni tanlang:", reply_markup=inline_kb)
 
+# Inline tugma bosilganda javob berish
+@dp.callback_query()
+async def handle_product_selection(callback: CallbackQuery):
+    product = callback.data
+    await callback.message.answer(f"{product.capitalize()} tanlandi ✅")
+    await callback.answer()
 
-@dp.message(F.text.isdigit())
-async def get_user(message: Message):
-    with open("users.json", "r", encoding="utf-8") as file:
-        users = json.load(file)
-
-    if message.text in users:
-        user = users[message.text]
-        answer = f"Ismi : {user['name']}, yoshi : {user['age']}"
-        await message.answer(answer)
-    else:
-        await message.answer(f"{message.text} id li user yo'q")
-
-
-@dp.message()
-async def echo_handler(message: Message) -> None:
-    if "salom" in message.text.lower():
-        await message.answer("Va alaykum assalom")
-    else:
-        await message.answer(message.text)
-
-
-@dp.callback_query(F.data == "qonday")
-async def handle_qonday(callback: CallbackQuery):
-    await callback.message.answer("Buviniki")
-    await callback.answer()  # Callbackga javob berish majburiy
-
-
+# Botni ishga tushirish
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
