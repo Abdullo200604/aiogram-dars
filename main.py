@@ -1,8 +1,6 @@
 import asyncio
-import json
 import logging
 import sys
-import os
 
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.client.default import DefaultBotProperties
@@ -14,18 +12,8 @@ from aiogram.types import (
 )
 from config import TOKEN
 
-def load_savat():
-    if not os.path.exists("savat.json"):
-        return {}
-    with open("savat.json", "r", encoding="utf-8") as f:
-        return json.load(f)
-
-# Savatni saqlash
-def save_savat(savat):
-    with open("savat.json", "w", encoding="utf-8") as f:
-        json.dump(savat, f, ensure_ascii=False, indent=4)
-
 dp = Dispatcher()
+savatlar = {}  # Bu RAMdagi vaqtinchalik savat
 
 @dp.message(CommandStart())
 async def start_menu(message: Message):
@@ -54,11 +42,9 @@ async def handle_product_selection(callback: CallbackQuery):
     product = callback.data
     user_id = str(callback.from_user.id)
 
-    savat = load_savat()
-    if user_id not in savat:
-        savat[user_id] = []
-    savat[user_id].append(product)
-    save_savat(savat)
+    if user_id not in savatlar:
+        savatlar[user_id] = []
+    savatlar[user_id].append(product)
 
     await callback.message.answer(f"{product.capitalize()} savatga qo‘shildi ✅")
     await callback.answer()
@@ -66,8 +52,7 @@ async def handle_product_selection(callback: CallbackQuery):
 @dp.message(F.text == "/savat")
 async def show_user_savat(message: Message):
     user_id = str(message.from_user.id)
-    savat = load_savat()
-    items = savat.get(user_id, [])
+    items = savatlar.get(user_id, [])
 
     if items:
         matn = "🧺 Sizning savatingiz:\n" + "\n".join(f"• {item.capitalize()}" for item in items)
