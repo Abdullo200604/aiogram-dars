@@ -18,7 +18,6 @@ dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    # Oddiy tugma: "🛒 Karzinka"
     reply_keyboard = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="🛒 Karzinka")]],
         resize_keyboard=True,
