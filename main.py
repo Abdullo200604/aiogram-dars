@@ -16,7 +16,6 @@ from config import TOKEN
 
 dp = Dispatcher()
 
-# /start komandasi uchun handler
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     # Oddiy tugma: "🛒 Karzinka"
@@ -31,7 +30,6 @@ async def command_start_handler(message: Message) -> None:
         reply_markup=reply_keyboard
     )
 
-# "🛒 Karzinka" tugmasi bosilganda inline tugmalarni ko'rsatish
 @dp.message(F.text == "🛒 Karzinka")
 async def show_karzinka_inline(message: Message):
     inline_kb = InlineKeyboardMarkup(
@@ -43,14 +41,12 @@ async def show_karzinka_inline(message: Message):
     )
     await message.answer("Mahsulotni tanlang:", reply_markup=inline_kb)
 
-# Inline tugma bosilganda javob berish
 @dp.callback_query()
 async def handle_product_selection(callback: CallbackQuery):
     product = callback.data
     await callback.message.answer(f"{product.capitalize()} tanlandi ✅")
     await callback.answer()
 
-# Botni ishga tushirish
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
