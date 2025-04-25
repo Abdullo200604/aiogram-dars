@@ -13,7 +13,7 @@ from aiogram.types import (
 from config import TOKEN
 
 dp = Dispatcher()
-savatlar = {}  # Bu RAMdagi vaqtinchalik savat
+savatlar = {}
 
 @dp.message(CommandStart())
 async def start_menu(message: Message):
