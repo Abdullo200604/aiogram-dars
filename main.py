@@ -13,7 +13,7 @@ from buttons import get_karzinka_buttons, get_pagination_buttons
 dp = Dispatcher()
 
 products = [f"Mahsulot {i}" for i in range(1, 101)]
-ITEMS_PER_PAGE = 10
+Page = 10
 
 @dp.message(CommandStart())
 async def start(message: Message):
@@ -46,9 +46,9 @@ async def show_products(message: Message):
     await send_products(message, page=1)
 
 async def send_products(message_or_callback, page: int):
-    start = (page - 1) * ITEMS_PER_PAGE
-    end = start + ITEMS_PER_PAGE
-    total_pages = (len(products) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE
+    start = (page - 1) * Page
+    end = start + Page
+    total_pages = (len(products) + Page - 1) // Page
 
     text = "\n".join(products[start:end])
     if isinstance(message_or_callback, Message):
