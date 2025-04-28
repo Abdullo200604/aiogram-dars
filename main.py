@@ -12,7 +12,7 @@ from buttons import get_karzinka_buttons, get_pagination_buttons
 
 dp = Dispatcher()
 
-products = [f"Mahsulot {i}" for i in range(1, 101)]
+products = [f"ustozni maxsulati {i}" for i in range(1, 101)]
 Page = 10
 
 @dp.message(CommandStart())
